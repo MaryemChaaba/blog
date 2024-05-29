@@ -1,7 +1,7 @@
 const asyncHandler= require('express-async-handler')
 const bcrypt = require('bcryptjs')
 const { User,validateRegisterUser, validateLoginUser } =require('./../models/User');
-const VerificationToken = require('../models/VerificationToken');
+const VerificationToken = require('./../models/VerificationToken');
 const crypto = require ('crypto')
 const sendEmail = require('../utils/sendEmail')
 
@@ -41,7 +41,7 @@ module.exports.registerUserCtrl =asyncHandler(async(req,res)=>{
     const verificationToken =new VerificationToken({user:user._id,token:crypto.randomBytes(32).toString('hex')})
     await verificationToken.save();
     // making the link
-    const link=`${process.env.CLIENT_DOMAIN}/${user._id}/verify/${verificationToken.token}`
+    const link=`${process.env.CLIENT_DOMAIN}/users/${user._id}/verify/${verificationToken.token}`
     // putting the link into an html template 
     const htmlTemplate =`
     <div>
@@ -88,7 +88,9 @@ module.exports.loginUserCtrl=asyncHandler(async(req,res)=>{
     }
     // send email (verify account if not verified)
     if (!user.isAccountVerified) {
-        let verificationToken =VerificationToken.findOne({user:user._id})
+        let verificationToken =await VerificationToken.findOne({user:user._id})
+    // const user =await User.findOne({email:req.body.email})
+
         if (!verificationToken) {
             verificationToken = new VerificationToken({
                 user:user._id,
@@ -96,8 +98,9 @@ module.exports.loginUserCtrl=asyncHandler(async(req,res)=>{
             })
             await verificationToken.save()
         }
+        console.log('tokin: '+verificationToken.token);
             // making the link
-    const link=`${process.env.CLIENT_DOMAIN}/${user._id}/verify/${verificationToken.token}`
+    const link=`${process.env.CLIENT_DOMAIN}/users/${user._id}/verify/${verificationToken.token}`
     // putting the link into an html template 
     const htmlTemplate =`
     <div>
